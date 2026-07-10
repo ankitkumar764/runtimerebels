@@ -6,7 +6,7 @@ from app.workers.celery_app import celery_app
 from app.workers.delays import calculate_typing_delay, calculate_bubble_delay
 from app.core.router import graph
 from app.services.telegram import send_message as tg_send, send_typing_action as tg_type
-from app.services.discord import send_message_stub as ds_send, trigger_typing_stub as ds_type
+from app.services.discord import send_message as ds_send, send_typing_action as ds_type
 from app.services.gmail import send_email_stub as gm_send
 
 logger = logging.getLogger(__name__)

@@ -12,13 +12,24 @@ logging.basicConfig(
 logger = logging.getLogger("digital-twin-autopilot")
 
 
+import asyncio
+from app.services.discord import bot_client
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # App startup logic
     logger.info("Starting Digital Twin Autopilot Backend...")
+    discord_task = None
+    if settings.DISCORD_BOT_TOKEN:
+        logger.info("Starting Discord bot client...")
+        discord_task = asyncio.create_task(bot_client.start(settings.DISCORD_BOT_TOKEN))
     yield
     # App shutdown logic
     logger.info("Shutting down Digital Twin Autopilot Backend...")
+    if discord_task:
+        logger.info("Closing Discord bot client...")
+        await bot_client.close()
+        discord_task.cancel()
 
 
 app = FastAPI(
