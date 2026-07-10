@@ -36,6 +36,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Include webhook routers
+from app.api.webhooks.telegram import router as telegram_router
+app.include_router(telegram_router, prefix="/webhook")
+
 
 @app.get("/health")
 async def health_check():
