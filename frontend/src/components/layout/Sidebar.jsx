@@ -22,7 +22,7 @@ export default function Sidebar() {
   return (
     <aside className="bmw-sidebar">
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-        <NavLink to="/" style={linkStyle}>
+        <NavLink to="/dashboard" style={linkStyle}>
           <Sliders size={16} />
           Control Center
         </NavLink>

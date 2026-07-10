@@ -1,7 +1,7 @@
 import json
 import base64
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from email.mime.text import MIMEText

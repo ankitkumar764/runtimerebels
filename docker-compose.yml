@@ -38,6 +38,26 @@ services:
     networks:
       - twin_network
 
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: twin_celery_worker
+    command: celery -A app.workers.celery_app worker --loglevel=info --pool=solo
+    volumes:
+      - ./backend:/app
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - QDRANT_URL=http://qdrant:6333
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - qdrant
+      - backend
+    networks:
+      - twin_network
+
 networks:
   twin_network:
     driver: bridge

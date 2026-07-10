@@ -84,7 +84,7 @@ export default function Approvals() {
     <div style={{ maxWidth: "800px", margin: "0 auto" }}>
       {/* Back button */}
       <Link
-        to="/"
+        to="/dashboard"
         style={{
           display: "inline-flex",
           alignItems: "center",

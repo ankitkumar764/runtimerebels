@@ -3,7 +3,10 @@ import json
 import os
 from contextlib import asynccontextmanager
 from typing import Dict, Any, List
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
+import uuid
+import csv
+import io
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from app.config import settings
@@ -180,6 +183,101 @@ from app.core.approval import approval_manager
 from app.services.telegram import send_message as tg_send
 from app.services.discord import send_message as ds_send
 from app.services.gmail import send_email as gm_send
+
+@app.post("/api/upload")
+async def upload_chat_history(file: UploadFile = File(...)):
+    filename = file.filename
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in [".json", ".csv", ".txt"]:
+        raise HTTPException(status_code=400, detail="Invalid file format. Please upload JSON, CSV, or TXT.")
+        
+    try:
+        contents = await file.read()
+        file_text = contents.decode("utf-8", errors="ignore")
+        messages = []
+        
+        if ext == ".json":
+            try:
+                data = json.loads(file_text)
+                if isinstance(data, list):
+                    for item in data:
+                        sender = item.get("sender") or item.get("from") or "Unknown"
+                        text = item.get("text") or item.get("content") or ""
+                        timestamp = item.get("timestamp") or item.get("date") or ""
+                        if text:
+                            messages.append({"sender": sender, "text": text, "timestamp": timestamp})
+                else:
+                    raise ValueError("JSON is not a list")
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Unable to parse JSON: {str(e)}")
+                
+        elif ext == ".csv":
+            try:
+                csv_reader = csv.reader(io.StringIO(file_text))
+                header = next(csv_reader, None)
+                sender_idx, text_idx, ts_idx = 0, 1, 2
+                if header:
+                    header_lower = [h.lower().strip() for h in header]
+                    if "sender" in header_lower:
+                        sender_idx = header_lower.index("sender")
+                    elif "from" in header_lower:
+                        sender_idx = header_lower.index("from")
+                    if "text" in header_lower:
+                        text_idx = header_lower.index("text")
+                    elif "content" in header_lower:
+                        text_idx = header_lower.index("content")
+                    elif "message" in header_lower:
+                        text_idx = header_lower.index("message")
+                    if "timestamp" in header_lower:
+                        ts_idx = header_lower.index("timestamp")
+                    elif "date" in header_lower:
+                        ts_idx = header_lower.index("date")
+                        
+                for row in csv_reader:
+                    if not row or len(row) <= max(sender_idx, text_idx):
+                        continue
+                    sender = row[sender_idx] if len(row) > sender_idx else "Unknown"
+                    text = row[text_idx] if len(row) > text_idx else ""
+                    timestamp = row[ts_idx] if len(row) > ts_idx else ""
+                    if text:
+                        messages.append({"sender": sender, "text": text, "timestamp": timestamp})
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Unable to parse CSV: {str(e)}")
+                
+        elif ext == ".txt":
+            try:
+                lines = file_text.split("\n")
+                for line in lines:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    if ":" in line:
+                        parts = line.split(":", 1)
+                        sender = parts[0].strip()
+                        text = parts[1].strip()
+                        if " - " in sender:
+                            sender = sender.split(" - ", 1)[1].strip()
+                        sender = sender.replace("[", "").replace("]", "")
+                        if text:
+                            messages.append({"sender": sender, "text": text, "timestamp": ""})
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Unable to parse TXT: {str(e)}")
+                
+        if not messages:
+            raise HTTPException(status_code=400, detail="No messages found in this file.")
+            
+        preview = messages[:5]
+        return {
+            "success": True,
+            "messages": len(messages),
+            "preview": preview,
+            "file_id": f"upload_{uuid.uuid4().hex[:8]}"
+        }
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Error processing upload: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @app.get("/api/stats")
 async def get_dashboard_stats():

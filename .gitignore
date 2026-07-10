@@ -10,6 +10,8 @@ venv/
 backend/data/chat_exports/*
 !backend/data/chat_exports/.gitkeep
 backend/data/identity_core.json
+backend/app/data/approvals.json
+backend/app/data/user_config.json
 # Keep the identity core template but ignore modifications
 # git update-index --assume-unchanged backend/data/identity_core.json
 
