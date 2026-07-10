@@ -13,14 +13,15 @@ export default function Approvals() {
     try {
       const data = await api.getApprovals();
       setApprovals(data);
-      // Initialize editing states
+      
+      // Initialize textareas map
       const textMap = {};
       data.forEach((appr) => {
         textMap[appr.id] = appr.ai_reply;
       });
       setEditingTexts(textMap);
     } catch (err) {
-      console.warn("Failed fetching from server. Displaying mock data.");
+      console.warn("Failed fetching approvals from server. Using mock items.");
       const mockApprovals = [
         {
           id: "appr_1",
@@ -66,9 +67,7 @@ export default function Approvals() {
       await api.approveReply(id, finalContent);
       loadApprovals();
     } catch (err) {
-      // Mock action locally
       setApprovals(approvals.filter((a) => a.id !== id));
-      alert(`[Demo] Message approved & queued: "${finalContent}"`);
     }
   };
 
@@ -77,14 +76,12 @@ export default function Approvals() {
       await api.rejectReply(id);
       loadApprovals();
     } catch (err) {
-      // Mock action locally
       setApprovals(approvals.filter((a) => a.id !== id));
-      alert(`[Demo] Message rejected and discarded.`);
     }
   };
 
   return (
-    <div style={{ maxWidth: "800px", margin: "0 auto", padding: "24px" }}>
+    <div style={{ maxWidth: "800px", margin: "0 auto" }}>
       {/* Back button */}
       <Link
         to="/"
@@ -92,155 +89,158 @@ export default function Approvals() {
           display: "inline-flex",
           alignItems: "center",
           gap: "8px",
-          color: "#94a3b8",
+          color: "var(--bmw-muted)",
           textDecoration: "none",
           marginBottom: "24px",
-          fontSize: "0.9rem",
-          transition: "color 0.2s",
+          fontSize: "12px",
+          fontWeight: "700",
+          textTransform: "uppercase",
+          letterSpacing: "1px",
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.color = "#fff")}
-        onMouseLeave={(e) => (e.currentTarget.style.color = "#94a3b8")}
       >
-        <ArrowLeft size={16} />
-        Back to Dashboard
+        <ArrowLeft size={14} />
+        Back to Control Center
       </Link>
 
-      <div style={{ marginBottom: "32px" }}>
-        <h1 style={{ margin: 0, fontSize: "2rem", fontWeight: "700" }}>
-          Human <span className="text-gradient">Overrides</span>
-        </h1>
-        <p style={{ margin: "4px 0 0 0", color: "#94a3b8" }}>
-          Review, edit, and approve low-confidence replies before sending.
-        </p>
+      {/* Header Banner */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-end",
+          borderBottom: "2px solid var(--bmw-ink)",
+          paddingBottom: "18px",
+          marginBottom: "32px",
+        }}
+      >
+        <div>
+          <span className="bmw-label-uppercase" style={{ color: "var(--bmw-blue)", fontSize: "14px" }}>
+            HUMAN IN THE LOOP
+          </span>
+          <h1 style={{ margin: "4px 0 0 0", fontSize: "32px", fontWeight: "700", color: "var(--bmw-ink)", textTransform: "uppercase", letterSpacing: "1px" }}>
+            Override Queue
+          </h1>
+        </div>
       </div>
 
       {loading && approvals.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "40px 0", color: "#64748b" }}>
+        <div style={{ textAlign: "center", padding: "40px 0", color: "var(--bmw-muted)" }}>
           Loading pending reviews...
         </div>
       ) : approvals.length === 0 ? (
-        <div className="glass-panel" style={{ padding: "40px", textAlign: "center", color: "#94a3b8" }}>
-          <Check size={48} color="#34d399" style={{ marginBottom: "16px" }} />
-          <h3 style={{ margin: "0 0 8px 0", fontWeight: "600" }}>All Clear!</h3>
-          <p style={{ margin: 0, color: "#64748b" }}>No messages are awaiting manual override approvals.</p>
+        <div className="bmw-card" style={{ padding: "48px", textAlign: "center" }}>
+          <Check size={48} color="var(--bmw-success)" style={{ margin: "0 auto 16px auto", display: "block" }} />
+          <h3 className="bmw-label-uppercase" style={{ fontSize: "16px", color: "var(--bmw-ink)", marginBottom: "8px" }}>
+            All Clear
+          </h3>
+          <p className="bmw-body-md" style={{ margin: 0, color: "var(--bmw-muted)" }}>
+            No low-confidence messages are currently awaiting manual overrides.
+          </p>
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
           {approvals.map((appr) => (
-            <div key={appr.id} className="glass-panel" style={{ padding: "24px" }}>
-              {/* Card Header */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div key={appr.id} className="bmw-card" style={{ padding: "32px" }}>
+              {/* Card Header details */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                   <span
                     style={{
-                      background:
+                      fontSize: "11px",
+                      fontWeight: "700",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                      padding: "2px 8px",
+                      backgroundColor:
+                        appr.platform === "telegram"
+                          ? "rgba(34, 158, 217, 0.15)"
+                          : appr.platform === "discord"
+                          ? "rgba(88, 101, 242, 0.15)"
+                          : "rgba(234, 67, 53, 0.15)",
+                      color:
                         appr.platform === "telegram"
                           ? "#229ED9"
                           : appr.platform === "discord"
                           ? "#5865F2"
                           : "#EA4335",
-                      color: "#fff",
-                      padding: "2px 6px",
-                      borderRadius: "4px",
-                      fontSize: "0.65rem",
-                      fontWeight: "600",
-                      textTransform: "uppercase",
                     }}
                   >
                     {appr.platform}
                   </span>
-                  <span style={{ fontWeight: "600", fontSize: "0.95rem" }}>{appr.sender}</span>
+                  <span style={{ fontWeight: "700", fontSize: "14px", color: "var(--bmw-ink)" }}>
+                    {appr.sender}
+                  </span>
                 </div>
-                <span style={{ fontSize: "0.8rem", color: "#64748b" }}>{appr.timestamp}</span>
+                <span style={{ fontSize: "12px", color: "var(--bmw-muted)" }}>{appr.timestamp}</span>
               </div>
 
-              {/* Confidence Progress bar */}
-              <div style={{ marginBottom: "20px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", marginBottom: "4px" }}>
-                  <span style={{ color: "#94a3b8" }}>Verification Confidence</span>
-                  <span style={{ color: "#fbbf24", fontWeight: "600" }}>{Math.round(appr.confidence * 100)}%</span>
+              {/* Confidence progress indicator */}
+              <div style={{ marginBottom: "24px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "6px" }}>
+                  <span className="bmw-label-uppercase" style={{ fontSize: "11px", color: "var(--bmw-muted)" }}>
+                    AI Confidence Score
+                  </span>
+                  <span style={{ color: "var(--bmw-warning)", fontWeight: "700" }}>
+                    {Math.round(appr.confidence * 100)}%
+                  </span>
                 </div>
-                <div style={{ width: "100%", height: "6px", background: "rgba(255,255,255,0.05)", borderRadius: "3px" }}>
+                <div style={{ width: "100%", height: "4px", backgroundColor: "var(--bmw-surface-strong)" }}>
                   <div
                     style={{
                       width: `${appr.confidence * 100}%`,
                       height: "100%",
-                      background: "linear-gradient(to right, #fbbf24, #f59e0b)",
-                      borderRadius: "3px",
+                      backgroundColor: "var(--bmw-warning)",
                     }}
                   />
                 </div>
               </div>
 
-              {/* User Query Box */}
-              <div style={{ background: "rgba(255,255,255,0.015)", padding: "12px", borderRadius: "8px", marginBottom: "16px" }}>
-                <div style={{ fontSize: "0.7rem", color: "#64748b", textTransform: "uppercase", marginBottom: "4px" }}>
-                  User message
-                </div>
-                <div style={{ fontSize: "0.9rem" }}>{appr.query}</div>
+              {/* User Query Block */}
+              <div style={{ backgroundColor: "var(--bmw-surface-soft)", padding: "16px", marginBottom: "20px" }}>
+                <span className="bmw-label-uppercase" style={{ fontSize: "11px", color: "var(--bmw-muted)", display: "block", marginBottom: "6px" }}>
+                  Original Message
+                </span>
+                <p className="bmw-body-md" style={{ margin: 0, color: "var(--bmw-ink)" }}>
+                  "{appr.query}"
+                </p>
               </div>
 
-              {/* Editable Text Area */}
-              <div style={{ marginBottom: "20px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.7rem", color: "#818cf8", textTransform: "uppercase", marginBottom: "6px" }}>
+              {/* Editable Draft Area */}
+              <div style={{ marginBottom: "24px" }}>
+                <label
+                  className="bmw-label-uppercase"
+                  style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", color: "var(--bmw-blue)", marginBottom: "8px" }}
+                >
                   <Edit3 size={12} />
-                  <span>Draft Reply (Click to edit)</span>
-                </div>
+                  Draft Response (Editable)
+                </label>
                 <textarea
-                  className="glass-input"
-                  style={{
-                    width: "100%",
-                    minHeight: "100px",
-                    boxSizing: "border-box",
-                    fontFamily: "inherit",
-                    fontSize: "0.9rem",
-                    resize: "vertical",
-                    lineHeight: "1.4",
-                  }}
+                  className="bmw-input"
+                  rows={4}
+                  style={{ resize: "vertical", fontFamily: "inherit", lineHeight: "1.6" }}
                   value={editingTexts[appr.id] || ""}
                   onChange={(e) => handleTextChange(appr.id, e.target.value)}
                 />
               </div>
 
-              {/* Action Buttons */}
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+              {/* Card Action Buttons */}
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "16px" }}>
                 <button
                   onClick={() => handleReject(appr.id)}
-                  style={{
-                    background: "transparent",
-                    border: "1px solid rgba(239, 68, 68, 0.4)",
-                    color: "#f87171",
-                    padding: "10px 18px",
-                    borderRadius: "8px",
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    fontSize: "0.9rem",
-                    transition: "all 0.2s",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(239, 68, 68, 0.05)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                  className="bmw-btn-secondary"
+                  style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--bmw-error)", borderColor: "var(--bmw-hairline-strong)" }}
                 >
-                  <Trash2 size={16} />
-                  Reject
+                  <Trash2 size={14} />
+                  REJECT & DISCARD
                 </button>
 
                 <button
                   onClick={() => handleApprove(appr.id)}
-                  className="gradient-btn"
-                  style={{
-                    padding: "10px 18px",
-                    borderRadius: "8px",
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    fontSize: "0.9rem",
-                  }}
+                  className="bmw-btn-primary"
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
                 >
-                  <Send size={16} />
-                  Approve & Send
+                  <Send size={14} />
+                  APPROVE & SEND
                 </button>
               </div>
             </div>
